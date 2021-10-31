@@ -1,7 +1,7 @@
 const express = require('express')
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
- const  ObjectID = require('mongodb').ObjectId;
+const ObjectID = require('mongodb').ObjectId;
 require('dotenv').config()
 
 const app = express()
@@ -30,6 +30,15 @@ async function run() {
             const cursor = foodCollection.find({});
             const foods = await cursor.toArray();
             res.send(foods);
+        })
+
+        //post api
+        app.post('/foods',async(req,res)=>{
+            const food=req.body;
+            console.log('hit the post api',food);
+            const result=await foodCollection.insertOne(food);
+            console.log(result);
+            res.json(result)
         })
 
         //place orders 
