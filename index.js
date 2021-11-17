@@ -1,3 +1,4 @@
+//all imported packages and port
 const express = require('express')
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
@@ -11,15 +12,17 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+//testing server (GET API)
 app.get('/', (req, res) => {
     res.send('Running Optivit Healthy Food Server');
 });
 
+//connection to database
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ksgka.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 // console.log(uri);
-
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
+//client connection
 async function run() {
     try {
         await client.connect();
@@ -28,19 +31,17 @@ async function run() {
         const foodCollection = database.collection('services');
         const orderCollection = database.collection("order");
 
-        // load all services: get api
+        // load all services(GET API)
         app.get("/services", async (req, res) => {
             const services = await foodCollection.find({}).toArray();
             res.json(services);
         });
 
-        // load a single data: get api
+        // load a single service (GET API)
         app.get("/singleservice/:id", async (req, res) => {
             const id = req.params.id;
             const result = await foodCollection.findOne({ _id: ObjectId(id) });
             res.json(result);
-
-
         });
 
 
@@ -51,7 +52,6 @@ async function run() {
             res.json(result.insertedId);
         });
 
-
         //load a specific user's all ordered items (GET API)
         app.get("/myorders/:email", async (req, res) => {
             const email = req.params.email;
@@ -61,72 +61,43 @@ async function run() {
 
 
         // deletion of ordered item(DELETE API)
-    app.delete("/deletion/:id", async (req, res) => {
-        const id = req.params.id;
-        const result = await orderCollection.deleteOne({ _id: ObjectId(id) });
-        res.json(result.deletedCount);
-      });
+        app.delete("/deletion/:id", async (req, res) => {
+            const id = req.params.id;
+            const result = await orderCollection.deleteOne({ _id: ObjectId(id) });
+            res.json(result.deletedCount);
+        });
 
 
+        // load all ordered items(GET API)
+        app.get("/orders", async (req, res) => {
+            const services = await orderCollection.find({}).toArray();
+            res.send(services);
+        });
+
+        // Order confirmation (PUT API)
+        app.patch("/confirmation/:id", async (req, res) => {
+            const id = req.params.id;
+            const updateDoc = {
+                $set: {
+                    status: "Confirmed",
+                },
+            };
+            const result = await orderCollection.updateOne(
+                { _id: ObjectId(id) },
+                updateDoc
+            );
+            res.json(result.modifiedCount);
+        });
 
 
+        //add a new food item (POST API)
+        app.post("/addService", async (req, res) => {
+            const service = req.body;
+            const result = await foodCollection.insertOne(service);
+            res.json(result);
+        });
 
 
-
-
-
-
-        //     //GET foods API
-        //     app.get('/foods', async (req, res) => {
-        //         const cursor = foodCollection.find({});
-        //         const foods = await cursor.toArray();
-        //         res.send(foods);
-        //     })
-
-        //     //post api
-        //     app.post('/foods',async(req,res)=>{
-        //         const food=req.body;
-        //         console.log('hit the post api',food);
-        //         const result=await foodCollection.insertOne(food);
-        //         console.log(result);
-        //         res.json(result)
-        //     })
-
-        //     //place orders 
-        //     app.post('/placeOrder', async (req, res) => {
-        //         console.log(req.body);
-        //         const result = await orderCollection.insertOne(req.body);
-        //         console.log(result);
-        //     });
-
-        //     //Add customer
-        //     app.post("/addCustomer", async (req, res) => {
-        //         console.log(req.body);
-        //         const result = await customerCollection.insertOne(req.body);
-        //         res.send(result);
-        //     });
-
-        //     //Get all customers
-        //     app.get("/allCustomers", async (req, res) => {
-        //         const result = await customerCollection.find({}).toArray();
-        //         res.send(result);
-        //         console.log(object);
-        //     })
-
-        //     //Get all orders
-        //     app.get("/allFoods", async (req, res) => {
-        //         const result = await orderCollection.find({}).toArray();
-        //         res.send(result);
-        //     });
-
-        //     //Delete order
-        //     app.delete("/deleteFood/:id", async (req, res) => {
-        //         console.log(req.params.id);
-        //         const result = await orderCollection.deleteOne({
-        //             _id: new ObjectID(req.params.id)
-        //         });
-        //         res.send(result);
-        //     });
     }
     finally {
         // await client.close()
@@ -134,8 +105,7 @@ async function run() {
 }
 run().catch(console.dir);
 
-
-
+//port listening
 app.listen(port, () => {
     console.log('Running optivit on port', port)
 });
